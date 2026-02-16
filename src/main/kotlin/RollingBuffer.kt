@@ -1,0 +1,1 @@
+class RollingBuffer<T>(private val content: Array<T>)
