@@ -22,6 +22,9 @@ private class RectBuffer(val width: Int, val height: Int) {
     operator fun set(pos: Position, cell: Cell) {
         buffer[pos.ln][pos.col] = cell
     }
+
+    fun getString() =
+        buffer.joinToString("") { line -> line.joinToString("") { cell -> cell.content?.toString() ?: ""} + "\n" }
 }
 
 class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
@@ -83,4 +86,8 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
             if (cursor == endOfScreen) break
         }
     }
+
+    fun getScreen() = screen.getString()
+
+    fun getAll() = scrollbackBuffer.getString() + screen.getString()
 }

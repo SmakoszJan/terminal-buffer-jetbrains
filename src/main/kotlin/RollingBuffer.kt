@@ -19,4 +19,18 @@ class RollingBuffer<T>(private val content: Array<T>) {
 
         content[realIndex] = value
     }
+
+    fun joinToString(separator: String = "", transform: (T) -> String): String {
+        var result = ""
+
+        for (i in offset..<size) {
+            result += transform(content[i])
+        }
+
+        for (i in 0..<offset) {
+            result += transform(content[i])
+        }
+
+        return result
+    }
 }

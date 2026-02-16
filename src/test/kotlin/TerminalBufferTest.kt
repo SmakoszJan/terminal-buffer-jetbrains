@@ -55,4 +55,10 @@ internal class TerminalBufferTest {
         Assertions.assertEquals('A', buffer[2, 2].content)
         Assertions.assertEquals(Color.RED, buffer[2, 2].attributes.fgColor)
     }
+
+    @Test
+    fun `should print correctly`() {
+        buffer.write("Hello world!")
+        Assertions.assertEquals("Hello\n worl\nd!\n\n\n", buffer.getScreen())
+    }
 }
