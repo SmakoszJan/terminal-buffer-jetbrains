@@ -20,6 +20,8 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     // Arrays used for performance
     private val screen = RectBuffer(width, height)
     private val scrollbackBuffer = RectBuffer(width, scrollback)
+    var cursor = Position(0, 0)
+        set(value) { field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height)) }
 
     operator fun get(pos: Position) = if (pos.ln >= 0) {
         screen[pos]
@@ -27,4 +29,9 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
         scrollbackBuffer[Position(pos.col, scrollback + pos.ln)]
     }
     operator fun get(col: Int, ln: Int) = get(Position(col, ln))
+
+    fun cursorLeft() { cursor = Position(cursor.col - 1, cursor.ln) }
+    fun cursorRight() { cursor = Position(cursor.col + 1, cursor.ln) }
+    fun cursorUp() { cursor = Position(cursor.col, cursor.ln - 1) }
+    fun cursorDown() { cursor = Position(cursor.col, cursor.ln + 1) }
 }
