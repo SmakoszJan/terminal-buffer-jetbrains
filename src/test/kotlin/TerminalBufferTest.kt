@@ -70,5 +70,13 @@ internal class TerminalBufferTest {
         buffer.write("Hello world!")
         buffer.fillLine('X', 1)
         Assertions.assertEquals("Hello\nXXXXX\nd!\n\n\n", buffer.getScreen())
+
+        buffer.clearScreen()
+        Assertions.assertEquals("\n\n\n\n\n", buffer.getScreen())
+
+        buffer.cursor = Position(0, 0)
+        buffer.write("Hello world!")
+        Assertions.assertEquals("Hello", buffer.getLine(0))
+        Assertions.assertEquals("", buffer.getLine(3))
     }
 }

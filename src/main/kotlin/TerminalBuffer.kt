@@ -24,6 +24,10 @@ private class RectBuffer(val width: Int, val height: Int, initSize: Int) {
         buffer[pos.ln][pos.col] = cell
     }
 
+    fun removeLines() {
+        buffer.clear()
+    }
+
     fun getLine(ln: Int) = buffer[ln].joinToString("") { cell -> cell.content?.toString() ?: "" }
 
     fun getString() =
@@ -94,6 +98,19 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
         for (col in 0..<width) {
             screen[Position(col, ln)] = Cell(char, attributes)
         }
+    }
+
+    fun clearScreen() {
+        for (ln in 0..<height) {
+            for (col in 0..<width) {
+                screen[Position(col, ln)] = Cell()
+            }
+        }
+    }
+
+    fun clearAll() {
+        clearScreen()
+        scrollbackBuffer.removeLines()
     }
 
     fun getScreen() = screen.getString()

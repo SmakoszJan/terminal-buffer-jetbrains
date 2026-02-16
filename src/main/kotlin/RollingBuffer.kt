@@ -1,6 +1,6 @@
 class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
     private val content = MutableList(size) { init(it) }
-    private val offset = 0
+    private var offset = 0
     val size get() = content.size
 
     operator fun get(index: Int): T {
@@ -19,6 +19,11 @@ class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
         if (realIndex >= size) realIndex -= size
 
         content[realIndex] = value
+    }
+
+    fun clear() {
+        content.clear()
+        offset = 0
     }
 
     fun joinToString(separator: String = "", transform: (T) -> String): String {
