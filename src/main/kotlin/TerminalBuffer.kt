@@ -65,6 +65,16 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
         cursor = Position(cursor.col, cursor.ln + by)
     }
 
+    /// Move the cursor to the beginning of the current line
+    fun cursorHome() {
+        cursor = Position(0, cursor.ln)
+    }
+
+    /// Move the cursor to the end of the current line
+    fun cursorEnd() {
+        cursor = Position(endOfScreen.col, cursor.ln)
+    }
+
     fun write(text: String) {
         for (char in text) {
             screen[cursor] = Cell(char, attributes)
