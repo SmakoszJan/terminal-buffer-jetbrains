@@ -57,8 +57,11 @@ internal class TerminalBufferTest {
     }
 
     @Test
-    fun `should print correctly`() {
+    fun `should read lines correctly`() {
         buffer.write("Hello world!")
         Assertions.assertEquals("Hello\n worl\nd!\n\n\n", buffer.getScreen())
+        Assertions.assertEquals("Hello\n worl\nd!\n\n\n", buffer.getAll())
+        Assertions.assertEquals("Hello", buffer.getLine(0))
+        Assertions.assertEquals("", buffer.getLine(4))
     }
 }

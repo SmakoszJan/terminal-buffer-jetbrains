@@ -17,14 +17,17 @@ data class Position(val col: Int, val ln: Int)
 
 private class RectBuffer(val width: Int, val height: Int, initSize: Int) {
     private val buffer = RollingBuffer(initSize, height) { Array(width) { Cell() } }
+    val lines get() = buffer.size
 
     operator fun get(pos: Position) = buffer[pos.ln][pos.col]
     operator fun set(pos: Position, cell: Cell) {
         buffer[pos.ln][pos.col] = cell
     }
 
+    fun getLine(ln: Int) = buffer[ln].joinToString("") { cell -> cell.content?.toString() ?: "" }
+
     fun getString() =
-        buffer.joinToString("") { line -> line.joinToString("") { cell -> cell.content?.toString() ?: ""} + "\n" }
+        buffer.joinToString("") { line -> line.joinToString("") { cell -> cell.content?.toString() ?: "" } + "\n" }
 }
 
 class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
@@ -41,7 +44,7 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     operator fun get(pos: Position) = if (pos.ln >= 0) {
         screen[pos]
     } else {
-        scrollbackBuffer[Position(pos.col, scrollback + pos.ln)]
+        scrollbackBuffer[Position(pos.col, scrollbackBuffer.lines + pos.ln)]
     }
 
     operator fun get(col: Int, ln: Int) = get(Position(col, ln))
@@ -90,4 +93,6 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     fun getScreen() = screen.getString()
 
     fun getAll() = scrollbackBuffer.getString() + screen.getString()
+
+    fun getLine(ln: Int) = if (ln >= 0) screen.getLine(ln) else scrollbackBuffer.getLine(ln + scrollbackBuffer.lines)
 }
