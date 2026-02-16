@@ -1,4 +1,5 @@
-class RollingBuffer<T>(private val content: Array<T>) {
+class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
+    private val content = MutableList(size) { init(it) }
     private val offset = 0
     val size get() = content.size
 

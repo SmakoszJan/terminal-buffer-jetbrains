@@ -13,7 +13,7 @@ internal class TerminalBufferTest {
     @Test
     fun `should start empty`() {
         Assertions.assertEquals(Cell(), buffer[Position(2, 2)])
-        Assertions.assertEquals(Cell(), buffer[Position(2, -1)])
+        Assertions.assertEquals(Cell(), buffer[2, 0])
     }
 
     @Test
