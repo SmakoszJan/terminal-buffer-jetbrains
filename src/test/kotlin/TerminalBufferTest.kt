@@ -63,6 +63,11 @@ internal class TerminalBufferTest {
         Assertions.assertEquals("Hello\n worl\nd!\n\n\n", buffer.getAll())
         Assertions.assertEquals("Hello", buffer.getLine(0))
         Assertions.assertEquals("", buffer.getLine(4))
+
+        buffer.addEmptyLine()
+        Assertions.assertEquals(" worl\nd!\n\n\n\n", buffer.getScreen())
+        Assertions.assertEquals("Hello\n worl\nd!\n\n\n\n", buffer.getAll())
+        Assertions.assertEquals("Hello", buffer.getLine(-1))
     }
 
     @Test
@@ -78,5 +83,16 @@ internal class TerminalBufferTest {
         buffer.write("Hello world!")
         Assertions.assertEquals("Hello", buffer.getLine(0))
         Assertions.assertEquals("", buffer.getLine(3))
+
+        buffer.cursor = Position(0, 4)
+        buffer.write("AAAAA")
+        Assertions.assertEquals("AAAAA", buffer.getLine(4))
+        buffer.addEmptyLine()
+        Assertions.assertEquals("AAAAA", buffer.getLine(3))
+        Assertions.assertEquals("", buffer.getLine(4))
+
+        Assertions.assertEquals("Hello", buffer.getLine(-1))
+        buffer.clearAll()
+        Assertions.assertEquals("\n\n\n\n\n", buffer.getAll())
     }
 }

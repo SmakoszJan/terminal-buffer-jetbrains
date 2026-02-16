@@ -24,6 +24,8 @@ private class RectBuffer(val width: Int, val height: Int, initSize: Int) {
         buffer[pos.ln][pos.col] = cell
     }
 
+    fun pushLine(line: Array<Cell>): Array<Cell>? = buffer.push(line)
+
     fun removeLines() {
         buffer.clear()
     }
@@ -97,6 +99,12 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     fun fillLine(char: Char, ln: Int) {
         for (col in 0..<width) {
             screen[Position(col, ln)] = Cell(char, attributes)
+        }
+    }
+
+    fun addEmptyLine() {
+        screen.pushLine(Array(width) { Cell() })?.let {
+            scrollbackBuffer.pushLine(it)
         }
     }
 

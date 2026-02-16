@@ -21,6 +21,18 @@ class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
         content[realIndex] = value
     }
 
+    fun push(value: T): T? {
+        if (size == maxSize) {
+            val ret = content[offset]
+            content[offset] = value
+            offset++
+            return ret
+        } else {
+            content.add(value)
+            return null
+        }
+    }
+
     fun clear() {
         content.clear()
         offset = 0
