@@ -30,8 +30,12 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     }
     operator fun get(col: Int, ln: Int) = get(Position(col, ln))
 
-    fun cursorLeft() { cursor = Position(cursor.col - 1, cursor.ln) }
-    fun cursorRight() { cursor = Position(cursor.col + 1, cursor.ln) }
-    fun cursorUp() { cursor = Position(cursor.col, cursor.ln - 1) }
-    fun cursorDown() { cursor = Position(cursor.col, cursor.ln + 1) }
+    // NOTE: Horizontal cursor movements don't wrap to other lines
+    fun cursorLeft(by: Int = 1) {
+        cursor = Position(cursor.col - by, cursor.ln)
+    }
+    // NOTE: Horizontal cursor movements don't wrap to other lines
+    fun cursorRight(by: Int = 1) { cursor = Position(cursor.col + by, cursor.ln) }
+    fun cursorUp(by: Int = 1) { cursor = Position(cursor.col, cursor.ln - by) }
+    fun cursorDown(by: Int = 1) { cursor = Position(cursor.col, cursor.ln + by) }
 }

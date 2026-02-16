@@ -20,13 +20,13 @@ internal class TerminalBufferTest {
     fun `cursor should stay in bounds`() {
         buffer.cursor = Position(5, 5)
         Assertions.assertEquals(Position(4, 4), buffer.cursor)
-        buffer.cursorLeft()
-        Assertions.assertEquals(Position(3, 4), buffer.cursor)
+        buffer.cursorLeft(2)
+        Assertions.assertEquals(Position(2, 4), buffer.cursor)
         buffer.cursorDown()
         Assertions.assertEquals(Position(3, 4), buffer.cursor)
-        buffer.cursorUp()
-        Assertions.assertEquals(Position(3, 3), buffer.cursor)
-        repeat(10) { buffer.cursorRight() }
+        buffer.cursorUp(3)
+        Assertions.assertEquals(Position(3, 1), buffer.cursor)
+        buffer.cursorRight(10)
         Assertions.assertEquals(Position(4, 3), buffer.cursor)
 
         buffer.cursor = Position(-1, -1)
