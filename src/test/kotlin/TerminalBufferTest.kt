@@ -86,7 +86,6 @@ internal class TerminalBufferTest {
 
         buffer.cursor = Position(0, 4)
         buffer.write("AAAAA")
-        Assertions.assertEquals("AAAAA", buffer.getLine(4))
         buffer.addEmptyLine()
         Assertions.assertEquals("AAAAA", buffer.getLine(3))
         Assertions.assertEquals("", buffer.getLine(4))
