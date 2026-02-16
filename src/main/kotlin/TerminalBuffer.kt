@@ -33,6 +33,7 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
             field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height))
         }
     var attributes = Attributes()
+    val endOfScreen get() = Position(width - 1, height - 1)
 
     operator fun get(pos: Position) = if (pos.ln >= 0) {
         screen[pos]
@@ -62,5 +63,14 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
 
     fun cursorDown(by: Int = 1) {
         cursor = Position(cursor.col, cursor.ln + by)
+    }
+
+    fun write(text: String) {
+        for (char in text) {
+            screen[cursor] = Cell(char, attributes)
+            cursorRight()
+
+            if (cursor == endOfScreen) break
+        }
     }
 }
