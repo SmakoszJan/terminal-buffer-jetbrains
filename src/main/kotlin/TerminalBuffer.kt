@@ -16,11 +16,11 @@ data class Cell(val content: Char? = null, val attributes: Attributes = Attribut
 data class Position(val col: Int, val ln: Int)
 
 private class RectBuffer(val width: Int, val height: Int) {
-    private val buffer = RollingBuffer(Array(width * height) { Cell() })
+    private val buffer = RollingBuffer(Array(height) { Array(width) { Cell() } })
 
-    operator fun get(pos: Position) = buffer[pos.ln * width + pos.col]
+    operator fun get(pos: Position) = buffer[pos.ln][pos.col]
     operator fun set(pos: Position, cell: Cell) {
-        buffer[pos.ln * width + pos.col] = cell
+        buffer[pos.ln][pos.col] = cell
     }
 }
 
