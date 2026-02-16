@@ -64,4 +64,11 @@ internal class TerminalBufferTest {
         Assertions.assertEquals("Hello", buffer.getLine(0))
         Assertions.assertEquals("", buffer.getLine(4))
     }
+
+    @Test
+    fun `line should be filled`() {
+        buffer.write("Hello world!")
+        buffer.fillLine('X', 1)
+        Assertions.assertEquals("Hello\nXXXXX\nd!\n\n\n", buffer.getScreen())
+    }
 }
