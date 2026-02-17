@@ -36,10 +36,13 @@ private class RectBuffer(val width: Int, val height: Int, initSize: Int) {
         buffer.joinToString("") { line -> line.joinToString("") { cell -> cell.content?.toString() ?: "" } + "\n" }
 }
 
-class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
+class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     // Arrays used for performance
     private val screen = RectBuffer(width, height, height)
     private val scrollbackBuffer = RectBuffer(width, scrollback, 0)
+    val width get() = screen.width
+    val height get() = screen.height
+    val scrollback get() = scrollbackBuffer.height
     var cursor = Position(0, 0)
         set(value) {
             field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height))
