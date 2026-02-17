@@ -90,9 +90,9 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     fun write(text: String) {
         for (char in text) {
             screen[cursor] = Cell(char, attributes)
-            cursorRight()
 
             if (cursor == endOfScreen) break
+            cursorRight()
         }
     }
 
