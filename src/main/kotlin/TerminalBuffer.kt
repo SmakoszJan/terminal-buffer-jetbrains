@@ -105,6 +105,9 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
             val char = chars.removeFirst()
             if (screen[cursor].content != null) chars.addLast(screen[cursor])
             screen[cursor] = char
+
+            if (cursor == endOfScreen && chars.isNotEmpty()) addEmptyLine(true)
+
             cursorRight()
         }
     }

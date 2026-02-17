@@ -98,4 +98,31 @@ internal class TerminalBufferTest {
         buffer.clearAll()
         Assertions.assertEquals("\n\n\n\n\n", buffer.getAll())
     }
+
+    @Test
+    fun `should insert simple text`() {
+        buffer.insert("Hello world!")
+        buffer.attributes = Attributes(fgColor = Color.RED)
+        buffer.fillLine('X', 4)
+        Assertions.assertEquals("Hello\n worl\nd!\n\nXXXXX\n", buffer.getScreen())
+
+        buffer.cursor = Position(2, 0)
+        buffer.insert("ABC")
+        Assertions.assertEquals("HeABC\nllo w\norld!\n\nXXXXX\n", buffer.getScreen())
+        Assertions.assertEquals(Color.RED, buffer[3, 0].attributes.fgColor)
+        Assertions.assertEquals(Color.DEFAULT, buffer[0, 1].attributes.fgColor)
+
+        buffer.clearScreen()
+        buffer.cursor = Position(0, 0)
+        buffer.write("AAAAA")
+        buffer.write("BBBBB")
+        buffer.write("CCCCC")
+        buffer.write("DDDDD")
+        buffer.write("EEEEE")
+        buffer.cursor = Position(0, 2)
+
+        buffer.insert("12345")
+        Assertions.assertEquals("BBBBB\n12345\nCCCCC\nDDDDD\nEEEEE\n", buffer.getScreen())
+        Assertions.assertEquals("AAAAA\nBBBBB\n12345\nCCCCC\nDDDDD\nEEEEE\n", buffer.getAll())
+    }
 }
