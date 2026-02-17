@@ -38,4 +38,22 @@ class RollingBufferTest {
         Assertions.assertEquals("01234", buffer.joinToString())
         Assertions.assertEquals("0, 3, 6, 9, 12", buffer.joinToString(", ") { (it * 3).toString() })
     }
+
+    @Test
+    fun `should resize`() {
+        repeat(5) { buffer.push(it) }
+        Assertions.assertEquals(5, buffer.size)
+
+        // Upsize
+        buffer.setMaxSize(10)
+        Assertions.assertEquals(5, buffer.size)
+        Assertions.assertEquals(listOf(0, 1, 2, 3, 4), buffer.toList())
+        repeat(10) { buffer.push(it) }
+
+        // Downsize
+        val removed = buffer.setMaxSize(3)
+        Assertions.assertEquals(3, buffer.size)
+        Assertions.assertEquals(listOf(7, 8, 9), buffer.toList())
+        Assertions.assertEquals(listOf(0, 1, 2, 3, 4, 5, 6), removed)
+    }
 }

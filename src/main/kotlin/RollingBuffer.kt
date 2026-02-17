@@ -1,8 +1,13 @@
-class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
-    private val content = MutableList(size) { init(it) }
+class RollingBuffer<T>(size: Int, maxSize: Int, init: (Int) -> T) {
+    private var content = MutableList(size) { init(it) }
     private var offset = 0
-        set(value) { field = value % maxSize }
+        set(value) {
+            field = value % maxSize
+        }
     val size get() = content.size
+    private var _maxSize = maxSize
+    val maxSize: Int
+        get() = _maxSize
 
     operator fun get(index: Int): T {
         // Error check necessary, as it's theoretically possible to wrap around in a "valid" way
@@ -21,6 +26,24 @@ class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
         if (realIndex >= size) realIndex -= size
 
         content[realIndex] = value
+    }
+
+    fun setMaxSize(value: Int): List<T> {
+        val newMax = value.coerceAtLeast(0)
+        if (newMax < _maxSize) {
+            val list = toList()
+            content = list.takeLast(newMax).toMutableList()
+            offset = 0
+
+            _maxSize = newMax
+            return list.take(list.size - content.size)
+        } else if (newMax > _maxSize) {
+            content = toList().toMutableList()
+            offset = 0
+            _maxSize = newMax
+        }
+
+        return emptyList()
     }
 
     fun push(value: T): T? {

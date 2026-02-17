@@ -125,4 +125,17 @@ internal class TerminalBufferTest {
         Assertions.assertEquals("BBBBB\n12345\nCCCCC\nDDDDD\nEEEEE\n", buffer.getScreen())
         Assertions.assertEquals("AAAAA\nBBBBB\n12345\nCCCCC\nDDDDD\nEEEEE\n", buffer.getAll())
     }
+
+    @Test
+    fun `should resize scrollback`() {
+        buffer.fillLine('X', 0)
+        buffer.addEmptyLine()
+
+        Assertions.assertEquals("XXXXX\n\n\n\n\n\n", buffer.getAll())
+        buffer.scrollback = 5
+        repeat(4) { buffer.addEmptyLine() }
+        Assertions.assertEquals("XXXXX\n\n\n\n\n\n\n\n\n\n", buffer.getAll())
+        buffer.scrollback = 2
+        Assertions.assertEquals("\n\n\n\n\n\n\n", buffer.getAll())
+    }
 }

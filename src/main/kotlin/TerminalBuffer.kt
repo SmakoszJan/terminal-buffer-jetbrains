@@ -15,13 +15,28 @@ data class Cell(val content: Char? = null, val attributes: Attributes = Attribut
 // Negative line number refers to scrollback when reading
 data class Position(val col: Int, val ln: Int)
 
-private class RectBuffer(val width: Int, val height: Int, initSize: Int) {
+private class RectBuffer(val width: Int, height: Int, initSize: Int) {
     private val buffer = RollingBuffer(initSize, height) { Array(width) { Cell() } }
+    val height get() = buffer.maxSize
     val lines get() = buffer.size
 
     operator fun get(pos: Position) = buffer[pos.ln][pos.col]
     operator fun set(pos: Position, cell: Cell) {
         buffer[pos.ln][pos.col] = cell
+    }
+
+    /** Returns lines cut off by this */
+    fun resizeHeight(newHeight: Int, fillWithEmpty: Boolean): List<Array<Cell>> {
+        val oldHeight = buffer.maxSize
+        val ret = buffer.setMaxSize(newHeight)
+
+        if (newHeight > oldHeight && fillWithEmpty) {
+            repeat(buffer.maxSize - buffer.size) {
+                buffer.push(Array(width) { Cell() })
+            }
+        }
+
+        return ret
     }
 
     fun pushLine(line: Array<Cell>): Array<Cell>? = buffer.push(line)
@@ -42,7 +57,8 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     private val scrollbackBuffer = RectBuffer(width, scrollback, 0)
     val width get() = screen.width
     val height get() = screen.height
-    val scrollback get() = scrollbackBuffer.height
+    var scrollback get() = scrollbackBuffer.height
+        set(value) { scrollbackBuffer.resizeHeight(value, false) }
     var cursor = Position(0, 0)
         set(value) {
             field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height))
