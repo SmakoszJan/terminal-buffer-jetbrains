@@ -26,7 +26,7 @@ private class RectBuffer(val width: Int, height: Int, initSize: Int) {
     }
 
     /** Returns lines cut off by this */
-    fun resizeHeight(newHeight: Int, fillWithEmpty: Boolean): List<Array<Cell>> {
+    fun setHeight(newHeight: Int, fillWithEmpty: Boolean): List<Array<Cell>> {
         val oldHeight = buffer.maxSize
         val ret = buffer.setMaxSize(newHeight)
 
@@ -58,7 +58,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     val width get() = screen.width
     val height get() = screen.height
     var scrollback get() = scrollbackBuffer.height
-        set(value) { scrollbackBuffer.resizeHeight(value, false) }
+        set(value) { scrollbackBuffer.setHeight(value, false) }
     var cursor = Position(0, 0)
         set(value) {
             field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height))
