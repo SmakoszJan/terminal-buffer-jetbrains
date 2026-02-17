@@ -1,6 +1,7 @@
 class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
     private val content = MutableList(size) { init(it) }
     private var offset = 0
+        set(value) { field = value % maxSize }
     val size get() = content.size
 
     operator fun get(index: Int): T {
@@ -11,6 +12,7 @@ class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
 
         return if (realIndex >= size) content[realIndex - size] else content[realIndex]
     }
+
     operator fun set(index: Int, value: T) {
         // Error check necessary, as it's theoretically possible to wrap around in a "valid" way
         if (index !in 0..<size) throw IndexOutOfBoundsException()
@@ -38,17 +40,17 @@ class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
         offset = 0
     }
 
-    fun joinToString(separator: String = "", transform: (T) -> String): String {
-        var result = ""
+    fun joinToString(separator: String = "", transform: (T) -> String) =
+        buildString {
+            var first = true
 
-        for (i in offset..<size) {
-            result += transform(content[i])
+            for (i in offset..<size) {
+                if (!first) append(separator) else first = false
+                append(transform(content[i]))
+            }
+
+            for (i in 0..<offset) {
+                append(transform(content[i]))
+            }
         }
-
-        for (i in 0..<offset) {
-            result += transform(content[i])
-        }
-
-        return result
-    }
 }
