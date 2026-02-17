@@ -45,7 +45,7 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
             field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height))
         }
     var attributes = Attributes()
-    val endOfScreen get() = Position(width, height - 1)
+    val endOfScreen get() = Position(width - 1, height - 1)
 
     operator fun get(pos: Position) = if (pos.ln >= 0) {
         screen[pos]
@@ -66,12 +66,7 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     fun cursorRight(by: Int = 1) {
         val newCol = cursor.col + by
         val newLn = cursor.ln + (newCol / width)
-
-        if (newLn >= height && newCol >= width) {
-            cursor = endOfScreen
-        } else {
-            cursor = Position(newCol % width, newLn)
-        }
+        cursor = Position(newCol % width, newLn)
     }
 
     fun cursorUp(by: Int = 1) {
@@ -79,7 +74,6 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
     }
 
     fun cursorDown(by: Int = 1) {
-        if (cursor == endOfScreen) return
         cursor = Position(cursor.col, cursor.ln + by)
     }
 
