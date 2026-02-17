@@ -102,10 +102,13 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
         }
     }
 
-    fun addEmptyLine() {
+    /// `moveCursor` determines whether the cursor should be moved up (follow the text) afterwards`
+    fun addEmptyLine(moveCursor: Boolean = true) {
         screen.pushLine(Array(width) { Cell() })?.let {
             scrollbackBuffer.pushLine(it)
         }
+
+        if (moveCursor) cursorUp()
     }
 
     fun clearScreen() {

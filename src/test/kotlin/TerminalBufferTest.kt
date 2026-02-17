@@ -88,10 +88,13 @@ internal class TerminalBufferTest {
         buffer.write("AAAAA")
         Assertions.assertEquals("AAAAA", buffer.getLine(4))
         buffer.addEmptyLine()
+        Assertions.assertEquals(Position(4, 3), buffer.cursor)
         Assertions.assertEquals("AAAAA", buffer.getLine(3))
         Assertions.assertEquals("", buffer.getLine(4))
 
         Assertions.assertEquals("Hello", buffer.getLine(-1))
+        buffer.addEmptyLine(false)
+        Assertions.assertEquals(Position(4, 3), buffer.cursor)
         buffer.clearAll()
         Assertions.assertEquals("\n\n\n\n\n", buffer.getAll())
     }
