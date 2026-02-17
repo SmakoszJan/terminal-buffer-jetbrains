@@ -138,4 +138,16 @@ internal class TerminalBufferTest {
         buffer.scrollback = 2
         Assertions.assertEquals("\n\n\n\n\n\n\n", buffer.getAll())
     }
+
+    @Test
+    fun `should resize screen`() {
+        buffer.fillLine('X', 0)
+
+        Assertions.assertEquals("XXXXX\n\n\n\n\n", buffer.getScreen())
+        buffer.height = 7
+        Assertions.assertEquals("XXXXX\n\n\n\n\n\n\n", buffer.getScreen())
+        buffer.height = 6
+        Assertions.assertEquals("\n\n\n\n\n\n", buffer.getScreen())
+        Assertions.assertEquals("XXXXX\n\n\n\n\n\n\n", buffer.getAll())
+    }
 }

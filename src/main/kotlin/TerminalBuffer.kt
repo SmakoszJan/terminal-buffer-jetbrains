@@ -56,7 +56,13 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     private val screen = RectBuffer(width, height, height)
     private val scrollbackBuffer = RectBuffer(width, scrollback, 0)
     val width get() = screen.width
-    val height get() = screen.height
+    var height
+        get() = screen.height
+        set(value) {
+            for (line in screen.setHeight(value, true)) {
+                scrollbackBuffer.pushLine(line)
+            }
+        }
     var scrollback get() = scrollbackBuffer.height
         set(value) { scrollbackBuffer.setHeight(value, false) }
     var cursor = Position(0, 0)
