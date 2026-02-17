@@ -96,6 +96,19 @@ class TerminalBuffer(val width: Int, val height: Int, val scrollback: Int) {
         }
     }
 
+    fun insert(text: String) {
+        val chars = text
+            .map { Cell(it, attributes) }
+            .toCollection(ArrayDeque())
+
+        while (chars.isNotEmpty()) {
+            val char = chars.removeFirst()
+            if (screen[cursor].content != null) chars.addLast(screen[cursor])
+            screen[cursor] = char
+            cursorRight()
+        }
+    }
+
     fun fillLine(char: Char, ln: Int) {
         for (col in 0..<width) {
             screen[Position(col, ln)] = Cell(char, attributes)
