@@ -35,12 +35,14 @@ class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
         }
     }
 
+    fun toList() = content.subList(offset, size) + content.subList(0, offset)
+
     fun clear() {
         content.clear()
         offset = 0
     }
 
-    fun joinToString(separator: String = "", transform: (T) -> String) =
+    fun joinToString(separator: String = "", transform: (T) -> String = { it.toString() }) =
         buildString {
             var first = true
 
@@ -50,6 +52,7 @@ class RollingBuffer<T>(size: Int, val maxSize: Int, init: (Int) -> T) {
             }
 
             for (i in 0..<offset) {
+                append(separator)
                 append(transform(content[i]))
             }
         }
