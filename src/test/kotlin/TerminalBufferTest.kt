@@ -149,5 +149,14 @@ internal class TerminalBufferTest {
         buffer.height = 6
         Assertions.assertEquals("\n\n\n\n\n\n", buffer.getScreen())
         Assertions.assertEquals("XXXXX\n\n\n\n\n\n\n", buffer.getAll())
+        buffer.height = 7
+        Assertions.assertEquals("\n\n\n\n\n\n\n", buffer.getScreen())
+
+        buffer.width = 10
+        buffer.fillLine('A', 2)
+        Assertions.assertEquals("XXXXX\n\n\nAAAAAAAAAA\n\n\n\n\n", buffer.getAll())
+        buffer.width = 2
+        Assertions.assertEquals("XX\n\n\nAA\n\n\n\n\n", buffer.getAll())
+
     }
 }

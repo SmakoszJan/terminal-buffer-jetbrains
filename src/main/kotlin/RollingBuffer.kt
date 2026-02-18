@@ -65,6 +65,8 @@ class RollingBuffer<T>(size: Int, maxSize: Int, init: (Int) -> T) {
         offset = 0
     }
 
+    fun <U> map(transform: (T) -> U) = RollingBuffer(size, maxSize) { transform(get(it)) }
+
     fun joinToString(separator: String = "", transform: (T) -> String = { it.toString() }) =
         buildString {
             var first = true

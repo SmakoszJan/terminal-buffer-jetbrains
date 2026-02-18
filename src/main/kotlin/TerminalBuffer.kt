@@ -15,8 +15,15 @@ data class Cell(val content: Char? = null, val attributes: Attributes = Attribut
 // Negative line number refers to scrollback when reading
 data class Position(val col: Int, val ln: Int)
 
-private class RectBuffer(val width: Int, height: Int, initSize: Int) {
-    private val buffer = RollingBuffer(initSize, height) { Array(width) { Cell() } }
+private class RectBuffer(width: Int, height: Int, initSize: Int) {
+    private var buffer = RollingBuffer(initSize, height) { Array(width) { Cell() } }
+    var _width = width
+    var width
+        get() = _width
+    set(value) {
+        _width = value.coerceAtLeast(0)
+        buffer = buffer.map { it.copyOf(_width).map { item -> item ?: Cell() }.toTypedArray() }
+    }
     val height get() = buffer.maxSize
     val lines get() = buffer.size
 
@@ -55,7 +62,12 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     // Arrays used for performance
     private val screen = RectBuffer(width, height, height)
     private val scrollbackBuffer = RectBuffer(width, scrollback, 0)
-    val width get() = screen.width
+    var width
+        get() = screen.width
+        set(value) {
+            screen.width = value
+            scrollbackBuffer.width = value
+        }
     var height
         get() = screen.height
         set(value) {
