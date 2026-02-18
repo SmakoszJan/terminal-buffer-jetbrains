@@ -99,6 +99,10 @@ private class GraphemeArena {
             id
         }
 
+    fun clear() {
+        data.clear()
+        strings.clear()
+    }
 }
 
 private class RectBuffer(width: Int, height: Int, initSize: Int) {
@@ -300,5 +304,6 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     fun clearAll() {
         clearScreen()
         scrollbackBuffer.removeLines()
+        graphemes.clear()
     }
 }
