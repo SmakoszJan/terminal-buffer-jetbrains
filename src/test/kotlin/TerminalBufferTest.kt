@@ -12,8 +12,8 @@ internal class TerminalBufferTest {
 
     @Test
     fun `should start empty`() {
-        Assertions.assertEquals(Cell(), buffer[Position(2, 2)])
-        Assertions.assertEquals(Cell(), buffer[2, 0])
+        Assertions.assertEquals(CellInfo(), buffer[Position(2, 2)])
+        Assertions.assertEquals(CellInfo(), buffer[2, 0])
     }
 
     @Test
@@ -36,23 +36,23 @@ internal class TerminalBufferTest {
     @Test
     fun `should be editable`() {
         buffer.write("Hello world!")
-        Assertions.assertEquals('l', buffer[2, 0].content)
+        Assertions.assertEquals("l", buffer[2, 0].content)
         Assertions.assertEquals(Attributes(), buffer[1, 1].attributes)
-        Assertions.assertEquals('!', buffer[1, 2].content)
-        Assertions.assertEquals(Cell(), buffer[2, 3])
+        Assertions.assertEquals("!", buffer[1, 2].content)
+        Assertions.assertEquals(CellInfo(), buffer[2, 3])
         Assertions.assertEquals(Position(2, 2), buffer.cursor)
 
         buffer.attributes = Attributes(Color.RED, Color.GREEN, Style(italic = true))
         buffer.write("ABC")
-        Assertions.assertEquals('A', buffer[2, 2].content)
+        Assertions.assertEquals("A", buffer[2, 2].content)
         Assertions.assertEquals(Color.RED, buffer[2, 2].attributes.fgColor)
 
         buffer.attributes = Attributes(bgColor = Color.BLUE)
         buffer.cursor = Position(1, 2)
         buffer.write("X")
         Assertions.assertEquals(Color.BLUE, buffer[1, 2].attributes.bgColor)
-        Assertions.assertEquals('d', buffer[0, 2].content)
-        Assertions.assertEquals('A', buffer[2, 2].content)
+        Assertions.assertEquals("d", buffer[0, 2].content)
+        Assertions.assertEquals("A", buffer[2, 2].content)
         Assertions.assertEquals(Color.RED, buffer[2, 2].attributes.fgColor)
     }
 
