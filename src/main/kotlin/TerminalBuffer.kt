@@ -92,6 +92,12 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
 
     operator fun get(col: Int, ln: Int) = get(Position(col, ln))
 
+    fun getScreen() = screen.getString()
+
+    fun getAll() = scrollbackBuffer.getString() + screen.getString()
+
+    fun getLine(ln: Int) = if (ln >= 0) screen.getLine(ln) else scrollbackBuffer.getLine(ln + scrollbackBuffer.lines)
+
     // Wraps around to the previous line
     fun cursorLeft(by: Int = 1) {
         val newCol = cursor.col - by
@@ -176,10 +182,4 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         clearScreen()
         scrollbackBuffer.removeLines()
     }
-
-    fun getScreen() = screen.getString()
-
-    fun getAll() = scrollbackBuffer.getString() + screen.getString()
-
-    fun getLine(ln: Int) = if (ln >= 0) screen.getLine(ln) else scrollbackBuffer.getLine(ln + scrollbackBuffer.lines)
 }

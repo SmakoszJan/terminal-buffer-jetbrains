@@ -18,15 +18,7 @@ class RollingBuffer<T>(size: Int, maxSize: Int, init: (Int) -> T) {
         return if (realIndex >= size) content[realIndex - size] else content[realIndex]
     }
 
-    operator fun set(index: Int, value: T) {
-        // Error check necessary, as it's theoretically possible to wrap around in a "valid" way
-        if (index !in 0..<size) throw IndexOutOfBoundsException()
-
-        var realIndex = index + offset
-        if (realIndex >= size) realIndex -= size
-
-        content[realIndex] = value
-    }
+    fun toList() = content.subList(offset, size) + content.subList(0, offset)
 
     fun setMaxSize(value: Int): List<T> {
         val newMax = value.coerceAtLeast(0)
@@ -57,8 +49,6 @@ class RollingBuffer<T>(size: Int, maxSize: Int, init: (Int) -> T) {
             return null
         }
     }
-
-    fun toList() = content.subList(offset, size) + content.subList(0, offset)
 
     fun clear() {
         content.clear()
