@@ -107,7 +107,7 @@ private class GraphemeArena {
 
 private class RectBuffer(width: Int, height: Int, initSize: Int) {
     private var buffer = RollingBuffer(initSize, height) { CellArray(width) { Cell.EMPTY } }
-    var _width = width
+    private var _width = width
     var width
         get() = _width
         set(value) {
