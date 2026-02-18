@@ -161,7 +161,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         }
     }
 
-    /// `moveCursor` determines whether the cursor should be moved up (follow the text) afterwards`
+    /** `moveCursor` determines whether the cursor should be moved up (follow the text) afterward */
     fun addEmptyLine(moveCursor: Boolean = true) {
         screen.pushLine(Array(width) { Cell() })?.let {
             scrollbackBuffer.pushLine(it)
