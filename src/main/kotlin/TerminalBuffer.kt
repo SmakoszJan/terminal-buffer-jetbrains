@@ -54,13 +54,14 @@ private value class Cell(val data: Long) {
     val isItalic get() = (data and ITALIC_BIT) != 0L
     val isUnderline get() = (data and UNDERLINE_BIT) != 0L
 
-    fun toString(graphemes: GraphemeArena) = if (isDirect) when(size) {
+    fun getString(graphemes: GraphemeArena, printExtension: Boolean) = if (isDirect) when(size) {
+        3 if printExtension -> String(Character.toChars(codepoint))
         0, 3 -> ""
         1, 2 -> String(Character.toChars(codepoint))
         else -> error("Invalid cell size $size")
     } else { graphemes[codepoint] }
 
-    fun info(graphemes: GraphemeArena) = CellInfo(toString(graphemes), Attributes(fgColor, bgColor, Style(isBold, isItalic, isUnderline)))
+    fun info(graphemes: GraphemeArena) = CellInfo(getString(graphemes, true), Attributes(fgColor, bgColor, Style(isBold, isItalic, isUnderline)))
 }
 
 @JvmInline
@@ -131,10 +132,10 @@ private class RectBuffer(width: Int, height: Int, initSize: Int) {
         buffer.clear()
     }
 
-    fun getLine(ln: Int, graphemes: GraphemeArena) = buffer[ln].joinToString("") { it.toString(graphemes) }
+    fun getLine(ln: Int, graphemes: GraphemeArena) = buffer[ln].joinToString("") { it.getString(graphemes, false) }
 
     fun getString(graphemes: GraphemeArena) =
-        buffer.joinToString("") { line -> line.joinToString("") { it.toString(graphemes) } + "\n" }
+        buffer.joinToString("") { line -> line.joinToString("") { it.getString(graphemes, false) } + "\n" }
 }
 
 fun String.graphemes(): Iterator<String> = iterator {
