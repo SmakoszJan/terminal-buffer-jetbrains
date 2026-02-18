@@ -54,14 +54,17 @@ private value class Cell(val data: Long) {
     val isItalic get() = (data and ITALIC_BIT) != 0L
     val isUnderline get() = (data and UNDERLINE_BIT) != 0L
 
-    fun getString(graphemes: GraphemeArena, printExtension: Boolean) = if (isDirect) when(size) {
+    fun getString(graphemes: GraphemeArena, printExtension: Boolean) = if (isDirect) when (size) {
         3 if printExtension -> String(Character.toChars(codepoint))
         0, 3 -> ""
         1, 2 -> String(Character.toChars(codepoint))
         else -> error("Invalid cell size $size")
-    } else { graphemes[codepoint] }
+    } else {
+        graphemes[codepoint]
+    }
 
-    fun info(graphemes: GraphemeArena) = CellInfo(getString(graphemes, true), Attributes(fgColor, bgColor, Style(isBold, isItalic, isUnderline)))
+    fun info(graphemes: GraphemeArena) =
+        CellInfo(getString(graphemes, true), Attributes(fgColor, bgColor, Style(isBold, isItalic, isUnderline)))
 }
 
 @JvmInline
@@ -69,12 +72,15 @@ private value class CellArray(private val data: LongArray) {
     constructor(size: Int, init: (Int) -> Cell) : this(LongArray(size) { init(it).data })
 
     operator fun get(index: Int) = Cell(data[index])
-    operator fun set(index: Int, cell: Cell) { data[index] = cell.data }
+    operator fun set(index: Int, cell: Cell) {
+        data[index] = cell.data
+    }
 
     /** Pads with empty cells */
     fun copyOf(size: Int) = CellArray(data.copyOf(size))
 
-    fun joinToString(separator: String = ", ", transform: (Cell) -> String) = data.joinToString(separator) { transform(Cell(it)) }
+    fun joinToString(separator: String = ", ", transform: (Cell) -> String) =
+        data.joinToString(separator) { transform(Cell(it)) }
 }
 
 // Negative line number refers to scrollback when reading
@@ -100,10 +106,10 @@ private class RectBuffer(width: Int, height: Int, initSize: Int) {
     var _width = width
     var width
         get() = _width
-    set(value) {
-        _width = value.coerceAtLeast(0)
-        buffer = buffer.map { it.copyOf(_width) }
-    }
+        set(value) {
+            _width = value.coerceAtLeast(0)
+            buffer = buffer.map { it.copyOf(_width) }
+        }
     val height get() = buffer.maxSize
     val lines get() = buffer.size
 
@@ -169,8 +175,11 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                 scrollbackBuffer.pushLine(line)
             }
         }
-    var scrollback get() = scrollbackBuffer.height
-        set(value) { scrollbackBuffer.setHeight(value, false) }
+    var scrollback
+        get() = scrollbackBuffer.height
+        set(value) {
+            scrollbackBuffer.setHeight(value, false)
+        }
     var cursor = Position(0, 0)
         set(value) {
             field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height))
@@ -190,7 +199,8 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
 
     fun getAll() = scrollbackBuffer.getString(graphemes) + screen.getString(graphemes)
 
-    fun getLine(ln: Int) = if (ln >= 0) screen.getLine(ln, graphemes) else scrollbackBuffer.getLine(ln + scrollbackBuffer.lines, graphemes)
+    fun getLine(ln: Int) =
+        if (ln >= 0) screen.getLine(ln, graphemes) else scrollbackBuffer.getLine(ln + scrollbackBuffer.lines, graphemes)
 
     // Wraps around to the previous line
     fun cursorLeft(by: Int = 1) {

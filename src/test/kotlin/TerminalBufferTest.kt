@@ -163,8 +163,10 @@ internal class TerminalBufferTest {
     fun `should handle grapheme clusters`() {
         val family = "\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66"
         val scotland = "\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC73\uDB40\uDC63\uDB40\uDC74\uDB40\uDC7F"
+
         @Suppress("LocalVariableName")
         val a_ = "\u0104"
+
         @Suppress("LocalVariableName")
         val a_2 = "A\u0308"
         // ĄĄ<family emoji>
