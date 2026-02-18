@@ -163,7 +163,7 @@ fun String.graphemes(): Iterator<String> = iterator {
 }
 
 class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
-    private val graphemes = GraphemeArena()
+    private var graphemes = GraphemeArena()
     private val screen = RectBuffer(width, height, height)
     private val scrollbackBuffer = RectBuffer(width, scrollback, 0)
     var width
@@ -305,5 +305,33 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         clearScreen()
         scrollbackBuffer.removeLines()
         graphemes.clear()
+    }
+
+    fun reconstruct() {
+        val newGraphemes = GraphemeArena()
+
+        for (ln in 0..<screen.height) {
+            for (col in 0..<screen.width) {
+                val cell = screen[Position(col, ln)]
+                if (cell.isDirect) {
+                    screen[Position(col, ln)] = cell
+                } else {
+                    val id = newGraphemes.insert(graphemes[cell.codepoint])
+                    screen[Position(col, ln)] = Cell((id.toLong() shl 32) or (cell.data and 0xFFFFFFFF))
+                }
+            }
+        }
+
+        for (ln in 0..<scrollbackBuffer.lines) {
+            for (col in 0..<scrollbackBuffer.width) {
+                val cell = screen[Position(col, ln)]
+                if (cell.isDirect) {
+                    screen[Position(col, ln)] = cell
+                } else {
+                    val id = newGraphemes.insert(graphemes[cell.codepoint])
+                    screen[Position(col, ln)] = Cell((id.toLong() shl 32) or (cell.data and 0xFFFFFFFF))
+                }
+            }
+        }
     }
 }

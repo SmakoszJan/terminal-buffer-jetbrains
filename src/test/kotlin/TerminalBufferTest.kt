@@ -178,4 +178,13 @@ internal class TerminalBufferTest {
         buffer.insert(scotland)
         Assertions.assertEquals("$a_$scotland$a_2$family", buffer.getLine(0))
     }
+
+    @Test
+    fun `should reconstruct`() {
+        buffer.write("Hello world!")
+        buffer.addEmptyLine()
+        Assertions.assertEquals("Hello\n worl\nd!\n\n\n\n", buffer.getAll())
+        buffer.reconstruct()
+        Assertions.assertEquals("Hello\n worl\nd!\n\n\n\n", buffer.getAll())
+    }
 }
