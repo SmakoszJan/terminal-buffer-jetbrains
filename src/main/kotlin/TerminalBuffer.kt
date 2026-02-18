@@ -241,8 +241,9 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     // TODO: Handle wide characters
     fun write(text: String) {
         for (char in text.graphemes()) {
-            screen[cursor] = if (char.length == 1) {
-                Cell(char[0].code, false, CharSize.NORMAL, attributes)
+            val codepoints = char.codePoints().toArray()
+            screen[cursor] = if (codepoints.size == 1) {
+                Cell(codepoints[0], false, CharSize.NORMAL, attributes)
             } else {
                 val id = graphemes.insert(char)
                 Cell(id, true, CharSize.NORMAL, attributes)
@@ -257,8 +258,9 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     fun insert(text: String) {
         val chars = text.graphemes().asSequence()
             .map {
-                if (it.length == 1) {
-                    Cell(it[0].code, false, CharSize.NORMAL, attributes)
+                val codepoints = it.codePoints().toArray()
+                if (codepoints.size == 1) {
+                    Cell(codepoints[0], false, CharSize.NORMAL, attributes)
                 } else {
                     val id = graphemes.insert(it)
                     Cell(id, true, CharSize.NORMAL, attributes)
