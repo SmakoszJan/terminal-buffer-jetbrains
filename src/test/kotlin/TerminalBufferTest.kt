@@ -157,6 +157,23 @@ internal class TerminalBufferTest {
         Assertions.assertEquals("XXXXX\n\n\nAAAAAAAAAA\n\n\n\n\n", buffer.getAll())
         buffer.width = 2
         Assertions.assertEquals("XX\n\n\nAA\n\n\n\n\n", buffer.getAll())
+    }
 
+    @Test
+    fun `should handle grapheme clusters`() {
+        val family = "\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66"
+        val scotland = "\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC73\uDB40\uDC63\uDB40\uDC74\uDB40\uDC7F"
+        @Suppress("LocalVariableName")
+        val a_ = "\u0104"
+        @Suppress("LocalVariableName")
+        val a_2 = "A\u0308"
+        // ĄĄ<family emoji>
+        buffer.write("$a_$a_2$family")
+        Assertions.assertEquals("$a_$a_2$family", buffer.getLine(0))
+        Assertions.assertEquals(Position(3, 0), buffer.cursor)
+
+        buffer.cursorLeft(2)
+        buffer.insert(scotland)
+        Assertions.assertEquals("$a_$scotland$a_2$family", buffer.getLine(0))
     }
 }
