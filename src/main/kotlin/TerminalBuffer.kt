@@ -349,19 +349,23 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                         cursorRight()
                         CharSize.EXTENSION
                     } else CharSize.NORMAL
+                    val clear = screen[cursor].size == CharSize.WIDE
                     screen[cursor] = Cell(codepoints[0], false, size, attributes)
 
                     if (cursor == endOfScreen) break
                     cursorRight()
+                    if (clear) screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
                 } else if (control == ControlCharBehavior.INTERPRET) {
                     if (!executeCommand(codepoints[0], false)) break
                 }
             } else {
                 val id = graphemes.insert(char)
+                val clear = screen[cursor].size == CharSize.WIDE
                 screen[cursor] = Cell(id, true, CharSize.NORMAL, attributes)
 
                 if (cursor == endOfScreen) break
                 cursorRight()
+                if (clear) screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
             }
         }
 

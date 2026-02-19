@@ -314,4 +314,24 @@ internal class TerminalBufferTest {
         buffer.cursor = Position(2, 0)
         Assertions.assertEquals(Position(1, 0), buffer.cursor)
     }
+
+    @Test
+    fun `write should overwrite wide characters`() {
+        buffer.write("\uFF21")
+        buffer.cursor = Position(0, 0)
+        buffer.write("A")
+        Assertions.assertEquals("A", buffer.getLine(0))
+        buffer.cursor = Position(1, 0)
+        Assertions.assertEquals(Position(1, 0), buffer.cursor)
+
+        buffer.clearAll()
+        buffer.cursor = Position(0, 0)
+
+        buffer.write("\uFF21")
+        buffer.cursor = Position(0, 0)
+        buffer.write("A\u0308")
+        Assertions.assertEquals("A\u0308", buffer.getLine(0))
+        buffer.cursor = Position(1, 0)
+        Assertions.assertEquals(Position(1, 0), buffer.cursor)
+    }
 }
