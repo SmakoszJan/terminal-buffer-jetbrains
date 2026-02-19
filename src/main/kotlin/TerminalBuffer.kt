@@ -85,6 +85,20 @@ private value class CellArray(private val data: LongArray) {
 // Negative line number refers to scrollback when reading
 data class Position(val col: Int, val ln: Int)
 
+enum class ControlCharBehavior {
+    IGNORE,
+    PRINT,
+
+    /** - `0x08` moves the cursor back one character;
+     * - `0x09` moves the cursor to the next tab stop (every 8 characters) or next line;
+     * - `0x0A` moves the cursor to the beginning of the next line;
+     * - `0x0C` pushes all screen lines to the scrollback;
+     * - `0x0D` moves the cursor to the beginning of the current line */
+    INTERPRET
+}
+
+private val controlChars = intArrayOf(0x08, 0x09, 0x0A, 0x0C, 0x0D)
+
 private class GraphemeArena {
     private var data = mutableListOf<String>()
     private var strings = mutableMapOf<String, Int>()
@@ -232,8 +246,8 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     // Wraps around to the previous line
     fun cursorLeft(by: Int = 1) {
         val newCol = cursor.col - by
-        val newLn = cursor.ln + (newCol / width)
-        cursor = Position(newCol % width, newLn)
+        val newLn = cursor.ln + ((newCol - width) / width)
+        cursor = Position((newCol + width) % width, newLn)
     }
 
     // Wraps around to the previous line
@@ -261,69 +275,147 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         cursor = Position(endOfScreen.col, cursor.ln)
     }
 
-    fun write(text: String) {
+    private fun executeCommand(cmd: Int, allowNewLine: Boolean): Boolean {
+        when (cmd) {
+            0x08 -> cursorLeft()
+            0x09 -> {
+                val tabStop = (cursor.col + 8) / 8 * 8
+                if (tabStop > endOfScreen.col) {
+                    if (cursor.ln == endOfScreen.ln) {
+                        if (allowNewLine)
+                            addEmptyLine(false)
+                        else
+                            return false
+                    } else cursorDown()
+                    cursorHome()
+                } else {
+                    cursor = Position(tabStop, cursor.ln)
+                }
+            }
+
+            0x0A -> {
+                if (cursor.ln == endOfScreen.ln) {
+                    if (allowNewLine)
+                        addEmptyLine(false)
+                    else
+                        return false
+                } else cursorDown()
+                cursorHome()
+            }
+
+            0x0C -> {
+                if (allowNewLine)
+                    repeat(height) { addEmptyLine(false) }
+                else
+                    clearScreen()
+                cursor = Position(0, 0)
+            }
+
+            0x0D -> cursorHome()
+        }
+
+        return true
+    }
+
+    fun write(text: String, control: ControlCharBehavior = ControlCharBehavior.PRINT) {
         for (char in text.graphemes()) {
-            val codepoints = char.codePoints().toArray()
+            var codepoints = char.codePoints().toArray()
+            if (codepoints.contentEquals(intArrayOf(0x0D, 0x0A)) && control != ControlCharBehavior.PRINT) codepoints =
+                intArrayOf(0x0A)
 
             if (codepoints.size == 1) {
-                val size = if (isWide(codepoints[0])) {
-                    while (cursor.col == endOfScreen.col) {
-                        screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
-                        if (cursor == endOfScreen) break
-                        cursorRight()
-                    }
+                if (codepoints[0] !in controlChars || control == ControlCharBehavior.PRINT) {
+                    val size = if (isWide(codepoints[0])) {
+                        while (cursor.col == endOfScreen.col) {
+                            screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
+                            if (cursor == endOfScreen) break
+                            cursorRight()
+                        }
 
-                    screen[cursor] = Cell(codepoints[0], false, CharSize.WIDE, attributes)
+                        screen[cursor] = Cell(codepoints[0], false, CharSize.WIDE, attributes)
+                        cursorRight()
+                        CharSize.EXTENSION
+                    } else CharSize.NORMAL
+                    screen[cursor] = Cell(codepoints[0], false, size, attributes)
+
+                    if (cursor == endOfScreen) break
                     cursorRight()
-                    CharSize.EXTENSION
-                } else CharSize.NORMAL
-                screen[cursor] = Cell(codepoints[0], false, size, attributes)
+                } else if (control == ControlCharBehavior.INTERPRET) {
+                    if (!executeCommand(codepoints[0], false)) return
+                }
             } else {
                 val id = graphemes.insert(char)
                 screen[cursor] = Cell(id, true, CharSize.NORMAL, attributes)
             }
-
-            if (cursor == endOfScreen) break
-            cursorRight()
         }
     }
 
-    fun insert(text: String) {
-        val chars = text.graphemes().asSequence()
-            .map {
-                val codepoints = it.codePoints().toArray()
+    fun insert(text: String, control: ControlCharBehavior = ControlCharBehavior.PRINT) {
+        open class Command
+        class Print(val cell: Cell) : Command()
+        class Execute(val command: Int) : Command()
+
+        val chars: ArrayDeque<Command> = text.graphemes().asSequence()
+            .mapNotNull {
+                var codepoints = it.codePoints().toArray()
+                if (codepoints.contentEquals(
+                        intArrayOf(
+                            0x0D,
+                            0x0A
+                        )
+                    ) && control != ControlCharBehavior.PRINT
+                ) codepoints = intArrayOf(0x0A)
+
                 if (codepoints.size == 1) {
-                    Cell(
-                        codepoints[0],
-                        false,
-                        if (isWide(codepoints[0])) CharSize.WIDE else CharSize.NORMAL,
-                        attributes
-                    )
+                    if (codepoints[0] in controlChars) {
+                        when (control) {
+                            ControlCharBehavior.IGNORE -> null
+                            ControlCharBehavior.PRINT -> Print(Cell(codepoints[0], false, CharSize.NORMAL, attributes))
+                            ControlCharBehavior.INTERPRET -> Execute(codepoints[0])
+                        }
+                    } else {
+                        Print(
+                            Cell(
+                                codepoints[0],
+                                false,
+                                if (isWide(codepoints[0])) CharSize.WIDE else CharSize.NORMAL,
+                                attributes
+                            )
+                        )
+                    }
                 } else {
                     val id = graphemes.insert(it)
-                    Cell(id, true, CharSize.NORMAL, attributes)
+                    Print(Cell(id, true, CharSize.NORMAL, attributes))
                 }
             }
             .toCollection(ArrayDeque())
 
         while (chars.isNotEmpty()) {
-            val char = chars.removeFirst()
-            if (screen[cursor].size != CharSize.EMPTY && screen[cursor].size != CharSize.EXTENSION) chars.addLast(screen[cursor])
-            if (char.size == CharSize.WIDE) {
-                if (width == 1) return
-                if (cursor == endOfScreen) addEmptyLine(false)
-                if (cursor.col == endOfScreen.col) {
-                    screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
+            when (val cmd = chars.removeFirst()) {
+                is Print -> {
+                    val char = cmd.cell
+                    if (screen[cursor].size != CharSize.EMPTY && screen[cursor].size != CharSize.EXTENSION) chars.addLast(
+                        Print(screen[cursor])
+                    )
+                    if (char.size == CharSize.WIDE) {
+                        if (width == 1) return
+                        if (cursor == endOfScreen) addEmptyLine(false)
+                        if (cursor.col == endOfScreen.col) {
+                            screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
+                            cursorRight()
+                        }
+
+                        chars.addFirst(Print(Cell(char.codepoint, false, CharSize.EXTENSION, attributes)))
+                    }
+                    screen[cursor] = char
+
+                    if (cursor == endOfScreen && chars.isNotEmpty()) addEmptyLine(true)
+
                     cursorRight()
                 }
 
-                chars.addFirst(Cell(char.codepoint, false, CharSize.EXTENSION, attributes))
+                is Execute -> executeCommand(cmd.command, true)
             }
-            screen[cursor] = char
-
-            if (cursor == endOfScreen && chars.isNotEmpty()) addEmptyLine(true)
-
-            cursorRight()
         }
     }
 

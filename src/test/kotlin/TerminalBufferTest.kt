@@ -224,4 +224,84 @@ internal class TerminalBufferTest {
         Assertions.assertEquals(" worl\nd!\n\n\ne\u0301e\u0301\n\n", buffer.getAll())
         Assertions.assertEquals(1, buffer.internedCount())
     }
+
+    @Test
+    fun `line feed should go to next line`() {
+        buffer.write("Hello\nworld!", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Hello\n\nworld\n!\n\n", buffer.getScreen())
+        buffer.cursor = Position(0, 4)
+        buffer.write("AA\nAA", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Hello\n\nworld\n!\nAA\n", buffer.getScreen())
+        buffer.cursor = Position(1, 0)
+        buffer.write("\n", ControlCharBehavior.PRINT)
+        Assertions.assertEquals("H\nllo\n\nworld\n!\nAA\n", buffer.getScreen())
+        buffer.write("\r\n", ControlCharBehavior.IGNORE)
+        Assertions.assertEquals("H\nllo\n\nworld\n!\nAA\n", buffer.getScreen())
+
+        buffer.clearAll()
+        buffer.cursor = Position(0, 0)
+
+        buffer.write("Hello")
+        buffer.insert("A\nA", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Hello\nA\nA\n\n\n", buffer.getScreen())
+        buffer.cursor = Position(2, 0)
+        buffer.insert("\n", ControlCharBehavior.PRINT)
+        Assertions.assertEquals("He\nll\noA\nA\n\n\n", buffer.getScreen())
+        buffer.cursor = Position(2, 0)
+        // Interpreting should only affect control chars in the input
+        buffer.insert("eee", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Heeee\n\nlloA\nA\n\n\n", buffer.getScreen())
+        buffer.cursor = Position(2, 0)
+        buffer.insert("\nx", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Heeee\nx\nllo\nAA\n\n\n", buffer.getScreen())
+    }
+
+    @Test
+    fun `carriage return should go to start of line`() {
+        buffer.write("Hell\rworld", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("world\n\n\n\n\n", buffer.getScreen())
+    }
+
+    @Test
+    fun `should go left on backspace`() {
+        buffer.write("Hello\bworld", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Hellw\norld\n\n\n\n", buffer.getScreen())
+
+        buffer.clearAll()
+        buffer.cursor = Position(0, 0)
+
+        buffer.insert("Hello\bworld", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Hellw\norldo\n\n\n\n", buffer.getScreen())
+    }
+
+    @Test
+    fun `should clear on form feed`() {
+        buffer.write("Hello\u000Cworld", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("world\n\n\n\n\n", buffer.getAll())
+
+        buffer.clearAll()
+        buffer.scrollback = 5
+        buffer.cursor = Position(0, 0)
+
+        buffer.insert("Hello\u000Cworld", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Hello\n\n\n\n\nworld\n\n\n\n\n", buffer.getAll())
+    }
+
+    @Test
+    fun `should move cursor on tab`() {
+        buffer.write("Hello\tworld", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("Hello\n\nworld\n\n\n", buffer.getAll())
+
+        buffer.clearAll()
+        buffer.cursor = Position(0, 0)
+        buffer.width = 10
+        buffer.write("Hello\tworld", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("w", buffer[8, 0].content)
+
+        buffer.cursor = Position(0, 0)
+        buffer.insert("\ta", ControlCharBehavior.INTERPRET)
+        Assertions.assertEquals("a", buffer[8, 0].content)
+        Assertions.assertEquals("w", buffer[9, 0].content)
+        Assertions.assertEquals("Helloaw", buffer.getLine(0))
+    }
 }
