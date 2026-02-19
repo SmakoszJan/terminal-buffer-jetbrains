@@ -274,7 +274,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                 screen[cursor] = Cell(codepoints[0], false, size, attributes)
             } else {
                 val id = graphemes.insert(char)
-                Cell(id, true, CharSize.NORMAL, attributes)
+                screen[cursor] = Cell(id, true, CharSize.NORMAL, attributes)
             }
 
             if (cursor == endOfScreen) break

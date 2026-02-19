@@ -169,7 +169,7 @@ internal class TerminalBufferTest {
 
         @Suppress("LocalVariableName")
         val a_2 = "A\u0308"
-        // ĄĄ<family emoji>
+        // ĄÄ<family emoji>
         buffer.write("$a_$a_2$family")
         Assertions.assertEquals("$a_$a_2$family", buffer.getLine(0))
         Assertions.assertEquals(Position(3, 0), buffer.cursor)
