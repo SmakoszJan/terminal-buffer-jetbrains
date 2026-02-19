@@ -304,4 +304,14 @@ internal class TerminalBufferTest {
         Assertions.assertEquals("w", buffer[9, 0].content)
         Assertions.assertEquals("Helloaw", buffer.getLine(0))
     }
+
+    @Test
+    fun `motion should respect character width`() {
+        buffer.write("A\uFF21")
+        buffer.cursor = Position(0, 0)
+        buffer.cursorRight(2)
+        Assertions.assertEquals(Position(3, 0), buffer.cursor)
+        buffer.cursor = Position(2, 0)
+        Assertions.assertEquals(Position(1, 0), buffer.cursor)
+    }
 }

@@ -219,9 +219,11 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         set(value) {
             scrollbackBuffer.setHeight(value, false)
         }
+    private var freeCursor = false
     var cursor = Position(0, 0)
         set(value) {
             field = Position(value.col.coerceIn(0..<width), value.ln.coerceIn(0..<height))
+            if (!freeCursor && screen[cursor].size == CharSize.EXTENSION) cursorLeft()
         }
     var attributes = Attributes()
     val endOfScreen get() = Position(width - 1, height - 1)
@@ -252,8 +254,11 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
 
     // Wraps around to the previous line
     fun cursorRight(by: Int = 1) {
-        val newCol = cursor.col + by
+        var newCol = cursor.col + by
         val newLn = cursor.ln + (newCol / width)
+
+        if (!freeCursor && screen[Position(newCol % width, newLn)].size == CharSize.EXTENSION) newCol++
+
         cursor = Position(newCol % width, newLn)
     }
 
@@ -277,7 +282,9 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
 
     private fun executeCommand(cmd: Int, allowNewLine: Boolean): Boolean {
         when (cmd) {
+            // Backspace
             0x08 -> cursorLeft()
+            // Tab
             0x09 -> {
                 val tabStop = (cursor.col + 8) / 8 * 8
                 if (tabStop > endOfScreen.col) {
@@ -290,9 +297,12 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                     cursorHome()
                 } else {
                     cursor = Position(tabStop, cursor.ln)
+
+                    if (screen[cursor].size == CharSize.EXTENSION) cursorLeft()
                 }
             }
 
+            // Line Feed
             0x0A -> {
                 if (cursor.ln == endOfScreen.ln) {
                     if (allowNewLine)
@@ -303,6 +313,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                 cursorHome()
             }
 
+            // Form Feed
             0x0C -> {
                 if (allowNewLine)
                     repeat(height) { addEmptyLine(false) }
@@ -311,6 +322,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                 cursor = Position(0, 0)
             }
 
+            // Carriage Return
             0x0D -> cursorHome()
         }
 
@@ -318,6 +330,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     }
 
     fun write(text: String, control: ControlCharBehavior = ControlCharBehavior.PRINT) {
+        freeCursor = true
         for (char in text.graphemes()) {
             var codepoints = char.codePoints().toArray()
             if (codepoints.contentEquals(intArrayOf(0x0D, 0x0A)) && control != ControlCharBehavior.PRINT) codepoints =
@@ -341,7 +354,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                     if (cursor == endOfScreen) break
                     cursorRight()
                 } else if (control == ControlCharBehavior.INTERPRET) {
-                    if (!executeCommand(codepoints[0], false)) return
+                    if (!executeCommand(codepoints[0], false)) break
                 }
             } else {
                 val id = graphemes.insert(char)
@@ -351,12 +364,16 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                 cursorRight()
             }
         }
+
+        freeCursor = false
     }
 
     fun insert(text: String, control: ControlCharBehavior = ControlCharBehavior.PRINT) {
         open class Command
         class Print(val cell: Cell) : Command()
         class Execute(val command: Int) : Command()
+
+        freeCursor = true
 
         val chars: ArrayDeque<Command> = text.graphemes().asSequence()
             .mapNotNull {
@@ -401,7 +418,7 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                         Print(screen[cursor])
                     )
                     if (char.size == CharSize.WIDE) {
-                        if (width == 1) return
+                        if (width == 1) break
                         if (cursor == endOfScreen) addEmptyLine(false)
                         if (cursor.col == endOfScreen.col) {
                             screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
@@ -420,6 +437,8 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
                 is Execute -> executeCommand(cmd.command, true)
             }
         }
+
+        freeCursor = false
     }
 
     fun fillLine(char: Char, ln: Int) {
