@@ -46,7 +46,7 @@ private value class Cell(val data: Long) {
     )
 
     val isDirect get() = (data and INDIRECT_BIT) == 0L
-    val size get() = ((data and SIZE_MASK) shr 29).toInt()
+    val size get() = CharSize.entries[((data and SIZE_MASK) shr 29).toInt()]
     val codepoint get() = (data shr 32).toInt()
     val fgColor get() = Color.entries[(data and FG_COLOR_MASK shr 8).toInt()]
     val bgColor get() = Color.entries[(data and BG_COLOR_MASK).toInt()]
@@ -55,10 +55,9 @@ private value class Cell(val data: Long) {
     val isUnderline get() = (data and UNDERLINE_BIT) != 0L
 
     fun getString(graphemes: GraphemeArena, printExtension: Boolean) = if (isDirect) when (size) {
-        3 if printExtension -> String(Character.toChars(codepoint))
-        0, 3 -> ""
-        1, 2 -> String(Character.toChars(codepoint))
-        else -> error("Invalid cell size $size")
+        CharSize.EXTENSION if printExtension -> String(Character.toChars(codepoint))
+        CharSize.EMPTY, CharSize.EXTENSION -> ""
+        CharSize.NORMAL, CharSize.WIDE -> String(Character.toChars(codepoint))
     } else {
         graphemes[codepoint]
     }
@@ -162,6 +161,24 @@ fun String.graphemes(): Iterator<String> = iterator {
     }
 }
 
+private fun isWide(codepoint: Int): Boolean {
+    return (
+            (codepoint in 0x1100..0x115F) ||   // Hangul Jamo
+                    (codepoint == 0x2329) ||           // Left Angle Bracket
+                    (codepoint == 0x232A) ||           // Right Angle Bracket
+                    (codepoint in 0x2E80..0x303E) ||   // CJK Radicals / Punctuation
+                    (codepoint in 0x3040..0xA4CF) ||   // Hiragana, Katakana, Han, Yi
+                    (codepoint in 0xAC00..0xD7A3) ||   // Hangul Syllables
+                    (codepoint in 0xF900..0xFAFF) ||   // CJK Compatibility
+                    (codepoint in 0xFE10..0xFE19) ||   // Vertical Forms
+                    (codepoint in 0xFE30..0xFE6F) ||   // CJK Compatibility Forms
+                    (codepoint in 0xFF00..0xFF60) ||   // Fullwidth Forms (The "Fat" Latin chars)
+                    (codepoint in 0xFFE0..0xFFE6) ||   // Fullwidth Currency
+                    (codepoint in 0x1F300..0x1F64F) || // Emojis (Misc Symbols & Pictographs)
+                    (codepoint in 0x1F900..0x1F9FF)    // Supplemental Symbols
+            )
+}
+
 class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     private var graphemes = GraphemeArena()
     private val screen = RectBuffer(width, height, height)
@@ -238,12 +255,23 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         cursor = Position(endOfScreen.col, cursor.ln)
     }
 
-    // TODO: Handle wide characters
     fun write(text: String) {
         for (char in text.graphemes()) {
             val codepoints = char.codePoints().toArray()
-            screen[cursor] = if (codepoints.size == 1) {
-                Cell(codepoints[0], false, CharSize.NORMAL, attributes)
+
+            if (codepoints.size == 1) {
+                val size = if (isWide(codepoints[0])) {
+                    while (cursor.col == endOfScreen.col) {
+                        screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
+                        if (cursor == endOfScreen) break
+                        cursorRight()
+                    }
+
+                    screen[cursor] = Cell(codepoints[0], false, CharSize.WIDE, attributes)
+                    cursorRight()
+                    CharSize.EXTENSION
+                } else CharSize.NORMAL
+                screen[cursor] = Cell(codepoints[0], false, size, attributes)
             } else {
                 val id = graphemes.insert(char)
                 Cell(id, true, CharSize.NORMAL, attributes)
@@ -254,13 +282,17 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         }
     }
 
-    // TODO: Handle wide characters
     fun insert(text: String) {
         val chars = text.graphemes().asSequence()
             .map {
                 val codepoints = it.codePoints().toArray()
                 if (codepoints.size == 1) {
-                    Cell(codepoints[0], false, CharSize.NORMAL, attributes)
+                    Cell(
+                        codepoints[0],
+                        false,
+                        if (isWide(codepoints[0])) CharSize.WIDE else CharSize.NORMAL,
+                        attributes
+                    )
                 } else {
                     val id = graphemes.insert(it)
                     Cell(id, true, CharSize.NORMAL, attributes)
@@ -270,7 +302,17 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
 
         while (chars.isNotEmpty()) {
             val char = chars.removeFirst()
-            if (screen[cursor].size != 0) chars.addLast(screen[cursor])
+            if (screen[cursor].size != CharSize.EMPTY && screen[cursor].size != CharSize.EXTENSION) chars.addLast(screen[cursor])
+            if (char.size == CharSize.WIDE) {
+                if (width == 1) return
+                if (cursor == endOfScreen) addEmptyLine(false)
+                if (cursor.col == endOfScreen.col) {
+                    screen[cursor] = Cell(0, false, CharSize.EMPTY, attributes)
+                    cursorRight()
+                }
+
+                chars.addFirst(Cell(char.codepoint, false, CharSize.EXTENSION, attributes))
+            }
             screen[cursor] = char
 
             if (cursor == endOfScreen && chars.isNotEmpty()) addEmptyLine(true)
@@ -279,10 +321,18 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
         }
     }
 
-    // TODO: Handle wide characters
     fun fillLine(char: Char, ln: Int) {
-        for (col in 0..<width) {
-            screen[Position(col, ln)] = Cell(char.code, false, CharSize.NORMAL, attributes)
+        val codepoint = char.code
+        if (isWide(codepoint)) {
+            for (col in 0..<width step 2) {
+                if (col + 1 == width) break
+                screen[Position(col, ln)] = Cell(codepoint, false, CharSize.WIDE, attributes)
+                screen[Position(col + 1, ln)] = Cell(codepoint, false, CharSize.EXTENSION, attributes)
+            }
+        } else {
+            for (col in 0..<width) {
+                screen[Position(col, ln)] = Cell(char.code, false, CharSize.NORMAL, attributes)
+            }
         }
     }
 

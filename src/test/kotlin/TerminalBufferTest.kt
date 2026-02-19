@@ -180,6 +180,30 @@ internal class TerminalBufferTest {
     }
 
     @Test
+    fun `should handle wide characters`() {
+        buffer.write("\uFF21AAA")
+        Assertions.assertEquals("\uFF21AAA", buffer.getLine(0))
+        Assertions.assertEquals(Position(0, 1), buffer.cursor)
+
+        buffer.attributes = Attributes(bgColor = Color.RED)
+        buffer.cursor = Position(0, 0)
+        buffer.insert("\u3042xx\u30A2")
+        Assertions.assertEquals("\u3042xx", buffer.getLine(0))
+        Assertions.assertEquals(Color.RED, buffer[4, 0].attributes.bgColor)
+        Assertions.assertEquals("\u30A2\uFF21A", buffer.getLine(1))
+
+        buffer.fillLine('\uFF21', 4)
+        Assertions.assertEquals("\uFF21\uFF21", buffer.getLine(4))
+    }
+
+    @Test
+    fun `should abort insertion if screen too narrow`() {
+        buffer.width = 1
+        buffer.insert("A\uFF21")
+        Assertions.assertEquals("A\n\n\n\n\n", buffer.getScreen())
+    }
+
+    @Test
     fun `should reconstruct`() {
         buffer.write("Hello world!")
         buffer.addEmptyLine()
