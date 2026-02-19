@@ -28,6 +28,12 @@ internal class TerminalBufferTest {
         Assertions.assertEquals(Position(2, 1), buffer.cursor)
         buffer.cursorRight(10)
         Assertions.assertEquals(Position(2, 3), buffer.cursor)
+        buffer.cursorLeft()
+        Assertions.assertEquals(Position(1, 3), buffer.cursor)
+        buffer.cursorHome()
+        Assertions.assertEquals(Position(0, 3), buffer.cursor)
+        buffer.cursorEnd()
+        Assertions.assertEquals(Position(4, 3), buffer.cursor)
 
         buffer.cursor = Position(-1, -1)
         Assertions.assertEquals(Position(0, 0), buffer.cursor)
