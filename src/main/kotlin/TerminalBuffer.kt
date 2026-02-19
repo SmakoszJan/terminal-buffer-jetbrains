@@ -346,6 +346,9 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
             } else {
                 val id = graphemes.insert(char)
                 screen[cursor] = Cell(id, true, CharSize.NORMAL, attributes)
+
+                if (cursor == endOfScreen) break
+                cursorRight()
             }
         }
     }
