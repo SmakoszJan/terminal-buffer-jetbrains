@@ -161,6 +161,8 @@ fun String.graphemes(): Iterator<String> = iterator {
     }
 }
 
+// This is taken almost directly from gemini. It's an approximation of which characters take up two cells
+// in terminals. For a proper solution, I believe an external library should be used.
 private fun isWide(codepoint: Int): Boolean {
     return (
             (codepoint in 0x1100..0x115F) ||   // Hangul Jamo
