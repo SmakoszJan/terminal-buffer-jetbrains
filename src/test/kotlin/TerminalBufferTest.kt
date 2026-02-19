@@ -211,10 +211,17 @@ internal class TerminalBufferTest {
 
     @Test
     fun `should reconstruct`() {
-        buffer.write("Hello world!")
+        buffer.scrollback = 1
+        buffer.write("HellA\u0308 world!")
         buffer.addEmptyLine()
-        Assertions.assertEquals("Hello\n worl\nd!\n\n\n\n", buffer.getAll())
+        Assertions.assertEquals("HellA\u0308\n worl\nd!\n\n\n\n", buffer.getAll())
+        buffer.cursor = Position(0, 4)
+        buffer.write("e\u0301e\u0301")
+        Assertions.assertEquals(2, buffer.internedCount())
+        buffer.addEmptyLine()
+        Assertions.assertEquals(2, buffer.internedCount())
         buffer.reconstruct()
-        Assertions.assertEquals("Hello\n worl\nd!\n\n\n\n", buffer.getAll())
+        Assertions.assertEquals(" worl\nd!\n\n\ne\u0301e\u0301\n\n", buffer.getAll())
+        Assertions.assertEquals(1, buffer.internedCount())
     }
 }

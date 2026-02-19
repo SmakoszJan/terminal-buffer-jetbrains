@@ -89,6 +89,8 @@ private class GraphemeArena {
     private var data = mutableListOf<String>()
     private var strings = mutableMapOf<String, Int>()
 
+    val size get() = data.size
+
     operator fun get(id: Int) = data[id]
 
     fun insert(char: String) =
@@ -217,6 +219,8 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
     }
 
     operator fun get(col: Int, ln: Int) = get(Position(col, ln))
+
+    fun internedCount() = graphemes.size
 
     fun getScreen() = screen.getString(graphemes)
 
@@ -378,14 +382,16 @@ class TerminalBuffer(width: Int, height: Int, scrollback: Int) {
 
         for (ln in 0..<scrollbackBuffer.lines) {
             for (col in 0..<scrollbackBuffer.width) {
-                val cell = screen[Position(col, ln)]
+                val cell = scrollbackBuffer[Position(col, ln)]
                 if (cell.isDirect) {
-                    screen[Position(col, ln)] = cell
+                    scrollbackBuffer[Position(col, ln)] = cell
                 } else {
                     val id = newGraphemes.insert(graphemes[cell.codepoint])
-                    screen[Position(col, ln)] = Cell((id.toLong() shl 32) or (cell.data and 0xFFFFFFFF))
+                    scrollbackBuffer[Position(col, ln)] = Cell((id.toLong() shl 32) or (cell.data and 0xFFFFFFFF))
                 }
             }
         }
+
+        graphemes = newGraphemes
     }
 }
